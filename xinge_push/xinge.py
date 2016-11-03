@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-#-*- coding: utf-8 -*-
-'''
-
+# -*- coding: utf-8 -*-
+"""
 Copyright ? 1998 - 2013 Tencent. All Rights Reserved. 腾讯公司 版权所有
 
-'''
+"""
 
 import json
 import httplib
@@ -12,251 +11,23 @@ import urllib
 import hashlib
 import time
 
-ERR_OK = 0
-ERR_PARAM = -1
-ERR_TIMESTAMP = -2
-ERR_SIGN = -3
-ERR_INTERNAL = -4
-ERR_HTTP = -100
-ERR_RETURN_DATA = -101
+from constant import *
+from message import Message, MessageIOS, MessageStatus
+from collections import Iterable
 
-class TimeInterval(object):
-    STR_START = 'start'
-    STR_END = 'end'
-    STR_HOUR = 'hour'
-    STR_MIN = 'min'
-    
-    def __init__(self, startHour=0, startMin=0, endHour=0, endMin=0):
-        self.startHour = startHour
-        self.startMin = startMin
-        self.endHour = endHour
-        self.endMin = endMin
-        
-    def _isValidTime(self, hour, minute):
-        return isinstance(hour, int) and isinstance(minute, int) and hour >= 0 and hour <=23 and minute >=0 and minute <= 59
-    
-    def _isValidInterval(self):
-        return self.endHour * 60 + self.endMin >= self.startHour * 60 + self.startMin
-        
-    def GetObject(self):
-        if not (self._isValidTime(self.startHour, self.startMin) and self._isValidTime(self.endHour, self.endMin)):
-            return None
-        if not self._isValidInterval():
-            return None
-        return {
-                self.STR_START:{self.STR_HOUR:str(self.startHour), self.STR_MIN:str(self.startMin)},
-                self.STR_END:{self.STR_HOUR:str(self.endHour), self.STR_MIN:str(self.endMin)}
-            }
-
-class ClickAction(object):
-    TYPE_ACTIVITY = 1
-    TYPE_URL = 2
-    TYPE_INTENT = 3
-    
-    def __init__(self, actionType=1, url='', confirmOnUrl=0, activity='', intent=''):
-        self.actionType = actionType
-        self.url = url
-        self.confirmOnUrl = confirmOnUrl
-        self.activity = activity
-        self.intent = intent
-        self.intentFlag = 0
-        self.pendingFlag = 0
-        self.packageName = ""
-        self.packageDownloadUrl = ""
-        self.confirmOnPackage = 1
-        
-    def GetObject(self):
-        ret = {}
-        ret['action_type'] = self.actionType
-        if self.TYPE_ACTIVITY == self.actionType:
-            ret['activity'] = self.activity
-            ret['aty_attr'] = {'if':self.intentFlag, 'pf':self.pendingFlag}
-        elif self.TYPE_URL == self.actionType:
-            ret['browser'] = {'url':self.url, 'confirm':self.confirmOnUrl}
-        elif self.TYPE_INTENT == self.actionType:
-            ret['intent'] = self.intent
-        
-        return ret
-
-class Style(object):
-    N_INDEPENDENT = 0
-    N_THIS_ONLY = -1
-
-    def __init__(self, builderId=0, ring=0, vibrate=0, clearable=1, nId=N_INDEPENDENT):
-        self.builderId = builderId
-        self.ring = ring
-        self.vibrate = vibrate
-        self.clearable = clearable
-        self.nId = nId
-        self.ringRaw = ""
-        self.lights = 1
-        self.iconType = 0
-        self.iconRes = ""
-        self.styleId = 1
-        self.smallIcon = ""
-
-class Message(object):
-    TYPE_NOTIFICATION = 1
-    TYPE_MESSAGE = 2
-    
-    PUSH_SINGLE_PKG = 0
-    PUSH_ACCESS_ID = 1
-    
-    def __init__(self):
-        self.title = ""
-        self.content = ""
-        self.expireTime = 0
-        self.sendTime = ""
-        self.acceptTime = ()
-        self.type = 0
-        self.style = None
-        self.action = None
-        self.custom = {}
-        self.multiPkg = self.PUSH_SINGLE_PKG
-        self.raw = None
-        self.loopTimes = 0
-        self.loopInterval = 0
-        
-    def GetMessageObject(self):
-        if self.raw is not None:
-            if isinstance(self.raw, basestring):
-                return json.loads(self.raw)
-            else:
-                return self.raw
-        
-        message = {}
-        message['title'] = self.title
-        message['content'] = self.content
-        
-        # TODO: check custom
-        message['custom_content'] = self.custom
-        
-        acceptTimeObj = self.GetAcceptTimeObject()
-        if None == acceptTimeObj:
-            return None
-        elif acceptTimeObj != []:
-            message['accept_time'] = acceptTimeObj
-        
-        if self.type == self.TYPE_NOTIFICATION:
-            if None == self.style:
-                style = Style()
-            else:
-                style = self.style
-                
-            if isinstance(style, Style):
-                message['builder_id'] = style.builderId
-                message['ring'] = style.ring
-                message['vibrate'] = style.vibrate
-                message['clearable'] = style.clearable
-                message['n_id'] = style.nId
-                message['ring_raw'] = style.ringRaw
-                message['lights'] = style.lights
-                message['icon_type'] = style.iconType
-                message['icon_res'] = style.iconRes
-                message['style_id'] = style.styleId
-                message['small_icon'] = style.smallIcon
-            else:
-                # style error
-                return None
-            
-            if None == self.action:
-                action = ClickAction()
-            else:
-                action = self.action
-            
-            if isinstance(action, ClickAction):
-                message['action'] = action.GetObject()
-            else:
-                # action error
-                return None
-        elif self.type == self.TYPE_MESSAGE:
-            pass
-        else:
-            return None
-        
-        return message
-    
-    def GetAcceptTimeObject(self):
-        ret = []
-        for ti in self.acceptTime:
-            if isinstance(ti, TimeInterval):
-                o = ti.GetObject()
-                if o is None:
-                    return None
-                else:
-                    ret.append(ti.GetObject())
-            else:
-                return None
-        return ret
-        
-class MessageIOS(Message):
-    def __init__(self):
-        Message.__init__(self)
-        self.alert = None
-        self.badge = None
-        self.sound = None
-        self.category = None
-        self.raw = None
-        
-    def GetMessageObject(self):
-        if self.raw is not None:
-            if isinstance(self.raw, basestring):
-                try:
-                    return json.loads(self.raw)
-                except Exception:
-                    return None
-            elif isinstance(self.raw, dict):
-                return self.raw
-            else:
-                return None
-            
-        message = self.custom
-        
-        acceptTimeObj = self.GetAcceptTimeObject()
-        if None == acceptTimeObj:
-            return None
-        elif acceptTimeObj != []:
-            message['accept_time'] = acceptTimeObj
-            
-        aps = {}
-        if isinstance(self.alert, basestring) or isinstance(self.alert, dict):
-            aps['alert'] = self.alert
-        else:
-            # alert type error
-            return None
-        if self.badge is not None:
-            aps['badge'] = self.badge
-        if self.sound is not None:
-            aps['sound'] = self.sound
-        if self.category is not None:
-            aps['category'] = self.category
-        message['aps'] = aps
-        return message
-
-class MessageStatus(object):
-    def __init__(self, status, startTime):
-        self.status = status
-        self.startTime = startTime
-    
-    def __str__(self):
-        return str(vars(self))
-    
-    def __repr__(self):
-        return self.__str__()
-        
 class TagTokenPair(object):
+    """
+    tag-token串，用来批量设置tag和token的对应关系
+    """
     def __init__(self, tag, token):
         self.tag = str(tag)
         self.token = str(token)
 
 class XingeApp(object):
-    DEVICE_ALL = 0
-    DEVICE_BROWSER = 1
-    DEVICE_PC = 2
-    DEVICE_ANDROID = 3
-    DEVICE_IOS = 4
-    DEVICE_WP = 5
-    
+    """
+    xinge_push的主要模块，调用信鸽restful API通信
+    用来创建、查询推送任务，设置、查询account和tags等信息
+    """
     PATH_PUSH_TOKEN = '/v2/push/single_device'
     PATH_PUSH_ACCOUNT = '/v2/push/single_account'
     PATH_PUSH_ACCOUNT_LIST = '/v2/push/account_list'
@@ -277,13 +48,16 @@ class XingeApp(object):
     PATH_QUERY_TOKENS_OF_ACCOUNT = '/v2/application/get_app_account_tokens'
     PATH_DEL_TOKEN_OF_ACCOUNT = '/v2/application/del_app_account_tokens'
     PATH_DEL_ALL_TOKENS_OF_ACCOUNT = '/v2/application/del_app_account_all_tokens'
-    
-    ENV_PROD = 1
-    ENV_DEV = 2
+
     
     IOS_MIN_ID = 2200000000
     
     def __init__(self, accessId, secretKey):
+        """
+
+        :param accessId: int, APP的唯一标识
+        :param secretKey: str, 信鸽网站分配的通信密钥
+        """
         self.accessId = int(accessId)
         self.secretKey = str(secretKey)
 
@@ -332,6 +106,13 @@ class XingeApp(object):
         return XingeHelper.Request(path, params)
     
     def PushSingleDevice(self, deviceToken, message, environment=0):
+        """
+        推送到单个设备
+        :param deviceToken: str, 目标设备token
+        :param message: Message, 待推送的消息
+        :param environment: int, 推送的目标环境(仅iOS需要, 必须是ENV_PROD或ENV_DEV的一种)
+        :return: (int, str), (ret_code, error_msg)
+        """
         deviceToken = str(deviceToken)
         if not (isinstance(message, Message) or isinstance(message, MessageIOS)):
             return ERR_PARAM, 'message type error'
@@ -345,6 +126,14 @@ class XingeApp(object):
         return ret[0], ret[1]
     
     def PushSingleAccount(self, deviceType, account, message, environment=0):
+        """
+        推送到单个账号
+        :param deviceType: int, 设备类型，请填0
+        :param account: str, 目标账号
+        :param message: Message, 待推送的消息
+        :param environment: int, 推送的目标环境(仅iOS需要, 必须是ENV_PROD或ENV_DEV的一种)
+        :return: (int, str), (ret_code, error_msg)
+        """
         deviceType = int(deviceType)
         account = str(account)
         if not isinstance(message, Message):
@@ -360,25 +149,40 @@ class XingeApp(object):
         return ret[0], ret[1]
     
     def PushAccountList(self, deviceType, accountList, message, environment=0):
+        """
+        推送到多个账号，如果目标账号数超过10000，建议改用XingeApp.PushDeviceListMultiple
+        :param deviceType: int, 设备类型，请填0
+        :param accountList: Iterable, 账号列表
+        :param message: Message, 待推送的消息
+        :param environment: int, 推送的目标环境(仅iOS需要, 必须是ENV_PROD或ENV_DEV的一种)
+        :return: (int, str, dict), (ret_code, error_msg, ext_info)
+        """
         deviceType = int(deviceType)
         if not isinstance(message, Message):
             return ERR_PARAM, 'message type error'
-        if not isinstance(accountList, (tuple, list)):
+        if not isinstance(accountList, Iterable):
             return ERR_PARAM, 'accountList type error', None
         
         params = self.InitParams()
         if False == self.SetPushParams(params, message, environment):
             return ERR_PARAM, 'invalid message, check your input'
         params['device_type'] = deviceType
-        params['account_list'] = json.dumps(accountList)
+        params['account_list'] = json.dumps([str(i) for i in accountList])
         params['send_time'] = ""
         
         ret = self.Request(self.PATH_PUSH_ACCOUNT_LIST, params)
         return ret[0], ret[1], ret[2]
     
     def PushAllDevices(self, deviceType, message, environment=0):
+        """
+        推送给全量设备
+        :param deviceType: int, 设备类型，请填0
+        :param message: Message, 待推送的消息
+        :param environment: int, 推送的目标环境(仅iOS需要, 必须是ENV_PROD或ENV_DEV的一种)
+        :return: 若成功则返回(int, str, str), (0, '', push_id)；失败返回(int, str, None), (ret_code, error_msg, None)
+        """
         deviceType = int(deviceType)
-        if not (isinstance(message, Message) or isinstance(message, MessageIOS)):
+        if not isinstance(message, Message):
             return ERR_PARAM, 'message type error', None
         
         params = self.InitParams()
@@ -398,16 +202,25 @@ class XingeApp(object):
         return ret[0], ret[1], result
     
     def PushTags(self, deviceType, tagList, tagsOp, message, environment=0):
+        """
+        推送给多个tags对应的设备
+        :param deviceType: int, 设备类型，请填0
+        :param tagList: Iterable, 指定推送的tag列表
+        :param tagsOp: str, 多个tag的运算关系，取值必须是下面之一： AND OR
+        :param message: Message, 待推送的消息
+        :param environment: int, 推送的目标环境(仅iOS需要, 必须是ENV_PROD或ENV_DEV的一种)
+        :return: 若成功则返回(int, str, str), (0, '', push_id)；失败返回(int, str, None), (ret_code, error_msg, None)
+        """
         deviceType = int(deviceType)
-        if not (isinstance(message, Message) or isinstance(message, MessageIOS)):
+        if not isinstance(message, Message):
             return ERR_PARAM, 'message type error', None
-        if not isinstance(tagList, (tuple, list)):
+        if not isinstance(tagList, Iterable):
             return ERR_PARAM, 'tagList type error', None
         if tagsOp not in ('AND','OR'):
             return ERR_PARAM, 'tagsOp error', None
         
         params = self.InitParams()
-        if False == self.SetPushParams(params, message, environment):
+        if not self.SetPushParams(params, message, environment):
             return ERR_PARAM, 'invalid message, check your input', None
         params['device_type'] = deviceType
         params['tags_list'] = json.dumps([str(tag) for tag in tagList], separators=(',',':'))
@@ -425,11 +238,17 @@ class XingeApp(object):
         return ret[0], ret[1], result
 
     def CreateMultipush(self, message, environment=0):
-        if not (isinstance(message, Message) or isinstance(message, MessageIOS)):
+        """
+        创建大批量推送消息，后续可调用PushAccountListMultiple或PushDeviceListMultiple接口批量添加设备；此接口创建的任务不支持定时推送
+        :param message: Message, 待推送的消息
+        :param environment: int, 推送的目标环境(仅iOS需要, 必须是ENV_PROD或ENV_DEV的一种)
+        :return: 若成功则返回(int, str, str), (0, '', push_id)；失败返回(int, str, None), (ret_code, error_msg, None)
+        """
+        if not isinstance(message, Message):
             return ERR_PARAM, 'message type error'
         
         params = self.InitParams()
-        if False == self.SetPushParams(params, message, environment):
+        if not self.SetPushParams(params, message, environment):
             return ERR_PARAM, 'invalid message, check your input'
             
         ret = self.Request(self.PATH_CREATE_MULTIPUSH, params)
@@ -441,36 +260,53 @@ class XingeApp(object):
                 result = ret[2]['push_id']
         return ret[0], ret[1], result
 
-    def PushDeviceListMultiple(self, push_id, deviceList):
-        push_id = int(push_id)
-        if push_id == 0:
+    def PushDeviceListMultiple(self, pushId, deviceList):
+        """
+        推送消息给大批量设备，可对同一个push_id多次调用此接口
+        :param pushId: CreateMultipush函数返回的push_id
+        :param deviceList: Iterable, 待推送的设备列表
+        :return: (int, str), (ret_code, error_msg)
+        """
+        pushId = int(pushId)
+        if pushId == 0:
             return ERR_PARAM, 'push_id type error'
-        if not isinstance(deviceList, (tuple, list)):
+        if not isinstance(deviceList, Iterable):
             return ERR_PARAM, 'deviceList type error', None
         
         params = self.InitParams()        
-        params['device_list'] = json.dumps(deviceList)    
-        params['push_id'] = push_id
+        params['device_list'] = json.dumps([str(i) for i in deviceList])
+        params['push_id'] = pushId
         params['send_time'] = ""
         ret = self.Request(self.PATH_PUSH_TOKEN_LIST_MULTIPLE, params)
         return ret[0], ret[1]
 
-    def PushAccountListMultiple(self, push_id, accountList):
-        push_id = int(push_id)
+    def PushAccountListMultiple(self, pushId, accountList):
+        """
+        推送消息给大批量账号，可对同一个push_id多次调用此接口
+        :param pushId: CreateMultipush函数返回的push_id
+        :param accountList: Iterable, 待推送的账号列表
+        :return: (int, str), (ret_code, error_msg)
+        """
+        push_id = int(pushId)
         if push_id == 0:
             return ERR_PARAM, 'push_id type error'
-        if not isinstance(accountList, (tuple, list)):
+        if not isinstance(accountList, Iterable):
             return ERR_PARAM, 'accountList type error', None
         
         params = self.InitParams()        
-        params['account_list'] = json.dumps(accountList)    
-        params['push_id'] = push_id
+        params['account_list'] = json.dumps([str(i) for i in accountList])
+        params['push_id'] = pushId
         params['send_time'] = ""
         ret = self.Request(self.PATH_PUSH_ACCOUNT_LIST_MULTIPLE, params)
         return ret[0], ret[1]
     
     def QueryPushStatus(self, pushIdList):
-        if not isinstance(pushIdList, (tuple, list)):
+        """
+        查询群发消息的状态，可同时查询多个pushId状态
+        :param pushIdList: Iterable, 要查询的push_id列表
+        :return: 若成功则返回(int, str, dict), (0, '', {push_id: MessageStatus})；失败返回(int, str, dict), (ret_code, error_msg, {})
+        """
+        if not isinstance(pushIdList, Iterable):
             return ERR_PARAM, 'pushIdList type error', None
         
         params = self.InitParams()
@@ -487,6 +323,10 @@ class XingeApp(object):
         return ret[0], ret[1], result
     
     def QueryDeviceCount(self):
+        """
+        查询APP覆盖的设备数量
+        :return: (int, str, int), (ret_code, error_msg, device_num)
+        """
         params = self.InitParams()
         ret = self.Request(self.PATH_GET_DEV_NUM, params)
         result = None
@@ -498,6 +338,12 @@ class XingeApp(object):
         return ret[0], ret[1], result
     
     def QueryTags(self, start, limit):
+        """
+        查询应用当前所有的tags
+        :param start: int, 从哪个index开始
+        :param limit: int, 限制结果数量，最多取多少个tag
+        :return: (int, str, int, list), (ret_code, error_msg, total_count, tag_list)
+        """
         params = self.InitParams()
         params['start'] = int(start)
         params['limit'] = int(limit)
@@ -517,6 +363,11 @@ class XingeApp(object):
         return retCode, ret[1], total, tags
     
     def CancelTimingPush(self, pushId):
+        """
+        取消尚未推送的定时任务
+        :param pushId: int, 各类推送任务返回的push_id
+        :return: (int, str), (ret_code, error_msg)
+        """
         params = self.InitParams()
         params['push_id'] = str(pushId)
         
@@ -524,6 +375,11 @@ class XingeApp(object):
         return ret[0], ret[1]
         
     def BatchSetTag(self, tagTokenPairs):
+        """
+        批量为token设备标签，每次调用最多输入20个pair
+        :param tagTokenPairs: TagTokenPair, 需要设置的tag-token对
+        :return: (int, str), (ret_code, error_msg)
+        """
         for pair in tagTokenPairs:
             if not isinstance(pair, TagTokenPair):
                 return ERR_PARAM, 'tag-token pair type error!'
@@ -536,6 +392,11 @@ class XingeApp(object):
         return ret[0], ret[1]
         
     def BatchDelTag(self, tagTokenPairs):
+        """
+        批量为token删除标签，每次调用最多输入20个pair
+        :param tagTokenPairs: TagTokenPair, 需要设置的tag-token对
+        :return: (int, str), (ret_code, error_msg)
+        """
         for pair in tagTokenPairs:
             if not isinstance(pair, TagTokenPair):
                 return ERR_PARAM, 'tag-token pair type error!'
@@ -548,6 +409,11 @@ class XingeApp(object):
         return ret[0], ret[1]
 
     def QueryTokenTags(self, token):
+        """
+        查询设备下所有的tag
+        :param token: str, 目标设备token
+        :return: (int, str, list), (ret_code, error_msg, tag_list)
+        """
         params = self.InitParams()
         params['device_token'] = str(token)
 
@@ -558,6 +424,11 @@ class XingeApp(object):
         return ret[0], ret[1], result
 
     def QueryTagTokenNum(self, tag):
+        """
+        查询带有指定tag的设备数量
+        :param tag: str, 指定的标签
+        :return: (int, str, int), (ret_code, error_msg, device_num)
+        """
         params = self.InitParams()
         params['tag'] = str(tag)
 
@@ -568,6 +439,11 @@ class XingeApp(object):
         return ret[0], ret[1], result
 
     def QueryInfoOfToken(self, token):
+        """
+        查询token相关的信息，包括最近一次活跃时间，离线消息数等
+        :param token: str, 目标设备token
+        :return: (int, str, dict), (ret_code, error_msg, ext_info)
+        """
         params = self.InitParams()
         params['device_token'] = str(token)
 
@@ -575,27 +451,40 @@ class XingeApp(object):
         return ret[0], ret[1], ret[2]
 
     def QueryTokensOfAccount(self, account):
+        """
+        查询账号绑定的token
+        :param account: str, 指定的账号
+        :return: (int, str, list), (ret_code, error_msg, token_list)
+        """
         params = self.InitParams()
         params['account'] = str(account)
 
         ret = self.Request(self.PATH_QUERY_TOKENS_OF_ACCOUNT, params)
         result = None
         if 'tokens' in ret[2]:
-        	result = ret[2]['tokens']
+            result = ret[2]['tokens']
         return ret[0], ret[1], result
 
     def DeleteTokenOfAccount(self, account, device_token):
+        """
+        删除指定账号和token的绑定关系（token仍然有效）
+        :param account: str, 目标账号
+        :param device_token: str, 目标token
+        :return: (int, str, dict), (ret_code, error_msg, ext_info)
+        """
         params = self.InitParams()
         params['account'] = str(account)
         params['device_token'] = str(device_token)
 
         ret = self.Request(self.PATH_DEL_TOKEN_OF_ACCOUNT, params)
-        result = None
-        if 'tokens' in ret[2]:
-        	result = ret[2]['tokens']
-        return ret[0], ret[1], result
+        return ret[0], ret[1], ret[2]
 
     def DeleteAllTokensOfAccount(self, account):
+        """
+        删除指定账号绑定的所有token（token仍然有效）
+        :param account: str, 目标账号
+        :return: (int, str), (ret_code, error_msg)
+        """
         params = self.InitParams()
         params['account'] = str(account)
 
@@ -664,49 +553,3 @@ class XingeHelper(object):
                 else:
                     retCode = ERR_RETURN_DATA
         return retCode, errMsg, result
-
-def _BuildAndroidNotification(title, content):
-    msg = Message()
-    msg.type = Message.TYPE_NOTIFICATION
-    msg.title = title
-    msg.content = content
-    msg.style = Style(1, 1)
-    msg.action = ClickAction()
-    return msg
-
-def _BuildIosNotification(content):
-    msg = MessageIOS()
-    msg.alert = content
-    return msg
-            
-def PushTokenAndroid(accessId, secretKey, title, content, token):
-    x = XingeApp(accessId, secretKey)
-    return x.PushSingleDevice(token, _BuildAndroidNotification(title, content))
-
-def PushAccountAndroid(accessId, secretKey, title, content, account):
-    x = XingeApp(accessId, secretKey)
-    return x.PushSingleAccount(0, account, _BuildAndroidNotification(title, content))
-
-def PushAllAndroid(accessId, secretKey, title, content):
-    x = XingeApp(accessId, secretKey)
-    return x.PushAllDevices(0, _BuildAndroidNotification(title, content))
-
-def PushTagAndroid(accessId, secretKey, title, content, tag):
-    x = XingeApp(accessId, secretKey)
-    return x.PushTags(0, (tag,), 'OR', _BuildAndroidNotification(title, content))
-
-def PushTokenIos(accessId, secretKey, content, token, env):
-    x = XingeApp(accessId, secretKey)
-    return x.PushSingleDevice(token, _BuildIosNotification(content), env)
-
-def PushAccountIos(accessId, secretKey, content, account, env):
-    x = XingeApp(accessId, secretKey)
-    return x.PushSingleAccount(0, account, _BuildIosNotification(content), env)
-
-def PushAllIos(accessId, secretKey, content, env):
-    x = XingeApp(accessId, secretKey)
-    return x.PushAllDevices(0, _BuildIosNotification(content), env)
-
-def PushTagIos(accessId, secretKey, content, tag, env):
-    x = XingeApp(accessId, secretKey)
-    return x.PushTags(0, (tag,), 'OR', _BuildIosNotification(content), env)

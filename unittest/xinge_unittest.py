@@ -6,51 +6,54 @@ Created on 2013-12-24
 @author: stanleyzeng
 '''
 
-import unittest
 import sys
+
 import path_util
+import unittest
+
 path_util.append_sys_path(sys, '..')
 
-import xinge
+from xinge_push import *
+from xinge_push.xinge import XingeHelper
 
 class HelperTest(unittest.TestCase):
     def testGenSignNormal(self):
         path = '/path/to/test'
         params = {'ParamA':'11111', 'paramB':'22', 'AnotherParam': '333'}
         secretKey = 'some_secret_key'
-        sign = xinge.XingeHelper.GenSign(path, params, secretKey)
+        sign = XingeHelper.GenSign(path, params, secretKey)
         self.assertEqual(sign, '5499cc1f827a581d241a013bc1030037')
         
 class TimeIntervalTest(unittest.TestCase):
     def testGetObjectNormal(self):
-        o = xinge.TimeInterval(0, 0, 23, 59).GetObject()
+        o = TimeInterval(0, 0, 23, 59).GetObject()
         expect = {'start': {'hour': '0', 'min': '0'}, 'end': {'hour': '23', 'min': '59'}}
         self.assertEqual(o, expect)
         
     def testGetObjectEqual(self):
-        o = xinge.TimeInterval(23, 59, 23, 59).GetObject()
+        o = TimeInterval(23, 59, 23, 59).GetObject()
         expect = {'start': {'hour': '23', 'min': '59'}, 'end': {'hour': '23', 'min': '59'}}
         self.assertEqual(o, expect)
         
     def testGetObjectWrongType(self):
-        o = xinge.TimeInterval(1, 2, '3', 4).GetObject()
+        o = TimeInterval(1, 2, '3', 4).GetObject()
         self.assertEqual(o, None)
         
     def testGetObjectWrongHour(self):
-        o = xinge.TimeInterval(2, 3, 24, 4).GetObject()
+        o = TimeInterval(2, 3, 24, 4).GetObject()
         self.assertEqual(o, None)
         
     def testGetObjectWrongMinute(self):
-        o = xinge.TimeInterval(2, 60, 23, 4).GetObject()
+        o = TimeInterval(2, 60, 23, 4).GetObject()
         self.assertEqual(o, None)
         
     def testGetObjectInvalidInterval(self):
-        self.assertEqual(xinge.TimeInterval(5, 6, 4, 6).GetObject(), None)
-        self.assertEqual(xinge.TimeInterval(5, 6, 5, 5).GetObject(), None)
+        self.assertEqual(TimeInterval(5, 6, 4, 6).GetObject(), None)
+        self.assertEqual(TimeInterval(5, 6, 5, 5).GetObject(), None)
         
 class ClickActionTest(unittest.TestCase):
     def getDefaultAction(self):
-        a = xinge.ClickAction()
+        a = ClickAction()
         a.url = 'http://www.test.com:8080/some/path'
         a.confirmOnUrl = 1
         a.activity = 'com.some.activity'
@@ -64,47 +67,47 @@ class ClickActionTest(unittest.TestCase):
         
     def testActivity(self):
         a = self.getDefaultAction()
-        a.actionType = xinge.ClickAction.TYPE_ACTIVITY
+        a.actionType = ClickAction.TYPE_ACTIVITY
         o = a.GetObject()
-        expect = {'action_type': xinge.ClickAction.TYPE_ACTIVITY, 'activity': a.activity, 'aty_attr': {'pf': a.pendingFlag, 'if': a.intentFlag}}
+        expect = {'action_type': ClickAction.TYPE_ACTIVITY, 'activity': a.activity, 'aty_attr': {'pf': a.pendingFlag, 'if': a.intentFlag}}
         self.assertEqual(o, expect)
         
     def testUrl(self):
         a = self.getDefaultAction()
-        a.actionType = xinge.ClickAction.TYPE_URL
+        a.actionType = ClickAction.TYPE_URL
         o = a.GetObject()
-        expect = {'action_type': xinge.ClickAction.TYPE_URL, 'browser': {'url': a.url, 'confirm': a.confirmOnUrl}}
+        expect = {'action_type': ClickAction.TYPE_URL, 'browser': {'url': a.url, 'confirm': a.confirmOnUrl}}
         self.assertEqual(o, expect)
         
     def testIntent(self):
         a = self.getDefaultAction()
-        a.actionType = xinge.ClickAction.TYPE_INTENT
+        a.actionType = ClickAction.TYPE_INTENT
         o = a.GetObject()
-        expect = {'action_type': xinge.ClickAction.TYPE_INTENT, 'intent': a.intent}
+        expect = {'action_type': ClickAction.TYPE_INTENT, 'intent': a.intent}
         self.assertEqual(o, expect)
         
     def testPackage(self):
         a = self.getDefaultAction()
-        a.actionType = xinge.ClickAction.TYPE_PACKAGE
+        a.actionType = ClickAction.TYPE_PACKAGE
         o = a.GetObject()
-        expect = {'action_type': xinge.ClickAction.TYPE_PACKAGE, 'package_name': {'packageDownloadUrl':a.packageDownloadUrl, 'confirm':a.confirmOnPackage, 'packageName':a.packageName}}
+        expect = {'action_type': ClickAction.TYPE_PACKAGE, 'package_name': {'packageDownloadUrl':a.packageDownloadUrl, 'confirm':a.confirmOnPackage, 'packageName':a.packageName}}
         self.assertEqual(o, expect)
         
 class MessageTest(unittest.TestCase):
     def getDefaultMsg(self):
-        msg = xinge.Message()
+        msg = Message()
         msg.title = 'some title'
         msg.content = 'some content'
         msg.custom = {'aaa':'111', 'bbb':'222'}
         
-        ti1 = xinge.TimeInterval(9, 30, 11, 30)
-        ti2 = xinge.TimeInterval(14, 00, 17, 00)
+        ti1 = TimeInterval(9, 30, 11, 30)
+        ti2 = TimeInterval(14, 00, 17, 00)
         msg.acceptTime = (ti1, ti2)
         
-        style = xinge.Style(1, 0, 1, 0)
+        style = Style(1, 0, 1, 0)
         msg.style = style
         
-        action = xinge.ClickAction(xinge.ClickAction.TYPE_URL, url='http://unittest.com/test/case', confirmOnUrl=1)
+        action = ClickAction(ClickAction.TYPE_URL, url='http://unittest.com/test/case', confirmOnUrl=1)
         msg.action = action
     
         return msg
@@ -117,14 +120,14 @@ class MessageTest(unittest.TestCase):
         
     def testGetMsgObjectMsg(self):
         msg = self.getDefaultMsg()
-        msg.type = xinge.Message.TYPE_MESSAGE
+        msg.type = Message.TYPE_MESSAGE
         o = msg.GetMessageObject()
         expect = {'content': 'some content', 'accept_time': [{'start': {'hour': '9', 'min': '30'}, 'end': {'hour': '11', 'min': '30'}}, {'start': {'hour': '14', 'min': '0'}, 'end': {'hour': '17', 'min': '0'}}], 'custom_content': {'aaa': '111', 'bbb': '222'}, 'title': 'some title'}
         self.assertEqual(o, expect)
         
     def testGetMsgObjectNotification(self):
         msg = self.getDefaultMsg()
-        msg.type = xinge.Message.TYPE_NOTIFICATION
+        msg.type = Message.TYPE_NOTIFICATION
         o = msg.GetMessageObject()
         expect = {'n_id': 0, 'title': 'some title', 'style_id': 1, 'icon_type': 0, 'builder_id': 1, 'vibrate': 1, 'ring_raw': '', 'content': 'some content', 'lights': 1, 'clearable': 0, 'accept_time': [{'start': {'hour': '9', 'min': '30'}, 'end': {'hour': '11', 'min': '30'}}, {'start': {'hour': '14', 'min': '0'}, 'end': {'hour': '17', 'min': '0'}}], 'action': {'action_type': 2, 'browser': {'url': 'http://unittest.com/test/case', 'confirm': 1}}, 'small_icon': '', 'ring': 0, 'icon_res': '', 'custom_content': {'aaa': '111', 'bbb': '222'}}
         self.assertEqual(o, expect)
