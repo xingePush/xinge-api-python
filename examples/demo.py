@@ -11,7 +11,7 @@ import xinge_push
 # 定义通知
 def BuildNotification():
     msg = xinge_push.Message()
-    msg.type = xinge_push.Message.TYPE_NOTIFICATION
+    msg.type = xinge_push.MESSAGE_TYPE_ANDROID_NOTIFICATION
     msg.title = 'some title'
     msg.content = 'some content'
     # 消息为离线设备保存的时间，单位为秒。默认为0，表示只推在线设备
@@ -55,7 +55,7 @@ def BuildNotification():
 # 定义透传消息
 def BuildMsg():
     msg = xinge_push.Message()
-    msg.type = xinge_push.Message.TYPE_MESSAGE
+    msg.type = xinge_push.MESSAGE_TYPE_ANDROID_MESSAGE
     msg.title = 'some title'
     msg.content = 'some content'
     # 消息为离线设备保存的时间，单位为秒。默认为0，表示只推在线设备

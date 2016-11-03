@@ -120,14 +120,14 @@ class MessageTest(unittest.TestCase):
         
     def testGetMsgObjectMsg(self):
         msg = self.getDefaultMsg()
-        msg.type = Message.TYPE_MESSAGE
+        msg.type = MESSAGE_TYPE_ANDROID_MESSAGE
         o = msg.GetMessageObject()
         expect = {'content': 'some content', 'accept_time': [{'start': {'hour': '9', 'min': '30'}, 'end': {'hour': '11', 'min': '30'}}, {'start': {'hour': '14', 'min': '0'}, 'end': {'hour': '17', 'min': '0'}}], 'custom_content': {'aaa': '111', 'bbb': '222'}, 'title': 'some title'}
         self.assertEqual(o, expect)
         
     def testGetMsgObjectNotification(self):
         msg = self.getDefaultMsg()
-        msg.type = Message.TYPE_NOTIFICATION
+        msg.type = MESSAGE_TYPE_ANDROID_NOTIFICATION
         o = msg.GetMessageObject()
         expect = {'n_id': 0, 'title': 'some title', 'style_id': 1, 'icon_type': 0, 'builder_id': 1, 'vibrate': 1, 'ring_raw': '', 'content': 'some content', 'lights': 1, 'clearable': 0, 'accept_time': [{'start': {'hour': '9', 'min': '30'}, 'end': {'hour': '11', 'min': '30'}}, {'start': {'hour': '14', 'min': '0'}, 'end': {'hour': '17', 'min': '0'}}], 'action': {'action_type': 2, 'browser': {'url': 'http://unittest.com/test/case', 'confirm': 1}}, 'small_icon': '', 'ring': 0, 'icon_res': '', 'custom_content': {'aaa': '111', 'bbb': '222'}}
         self.assertEqual(o, expect)

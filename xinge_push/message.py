@@ -4,11 +4,12 @@
 import json
 from schedule import TimeInterval
 from style import Style, ClickAction
+from constant import *
 
 class Message(object):
-    TYPE_NOTIFICATION = 1
-    TYPE_MESSAGE = 2
-
+    """
+    待推送的消息, Android系统专用
+    """
     PUSH_SINGLE_PKG = 0
     PUSH_ACCESS_ID = 1
 
@@ -47,7 +48,7 @@ class Message(object):
         elif acceptTimeObj != []:
             message['accept_time'] = acceptTimeObj
 
-        if self.type == self.TYPE_NOTIFICATION:
+        if self.type == MESSAGE_TYPE_ANDROID_NOTIFICATION:
             if None == self.style:
                 style = Style()
             else:
@@ -79,7 +80,7 @@ class Message(object):
             else:
                 # action error
                 return None
-        elif self.type == self.TYPE_MESSAGE:
+        elif self.type == MESSAGE_TYPE_ANDROID_MESSAGE:
             pass
         else:
             return None
@@ -100,6 +101,9 @@ class Message(object):
         return ret
 
 class MessageIOS(Message):
+    """
+    待推送的消息, iOS系统专用
+    """
     def __init__(self):
         Message.__init__(self)
         self.alert = None
@@ -107,6 +111,7 @@ class MessageIOS(Message):
         self.sound = None
         self.category = None
         self.raw = None
+        self.type = MESSAGE_TYPE_IOS_APNS_NOTIFICATION
 
     def GetMessageObject(self):
         if self.raw is not None:
@@ -129,22 +134,30 @@ class MessageIOS(Message):
             message['accept_time'] = acceptTimeObj
 
         aps = {}
-        if isinstance(self.alert, basestring) or isinstance(self.alert, dict):
-            aps['alert'] = self.alert
-        else:
-            # alert type error
+        if self.type == MESSAGE_TYPE_IOS_APNS_NOTIFICATION:
+            if isinstance(self.alert, basestring) or isinstance(self.alert, dict):
+                aps['alert'] = self.alert
+            else:
+                # alert type error
+                return None
+            if self.badge is not None:
+                aps['badge'] = self.badge
+            if self.sound is not None:
+                aps['sound'] = self.sound
+            if self.category is not None:
+                aps['category'] = self.category
+        elif self.type == MESSAGE_TYPE_IOS_REMOTE_NOTIFICATION:
+            aps['content-available'] = 1
+        else: # type error
             return None
-        if self.badge is not None:
-            aps['badge'] = self.badge
-        if self.sound is not None:
-            aps['sound'] = self.sound
-        if self.category is not None:
-            aps['category'] = self.category
         message['aps'] = aps
         return message
 
 
 class MessageStatus(object):
+    """
+    推送任务的状态
+    """
     def __init__(self, status, startTime):
         self.status = status
         self.startTime = startTime

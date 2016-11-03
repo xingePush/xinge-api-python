@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__version__ = '1.1.8.1'
+__version__ = '1.1.8.2'
 
 from .xinge import XingeApp, TagTokenPair
 from .style import Style, ClickAction
@@ -11,7 +11,7 @@ from .constant import *
 
 def _BuildAndroidNotification(title, content):
     msg = Message()
-    msg.type = Message.TYPE_NOTIFICATION
+    msg.type = MESSAGE_TYPE_ANDROID_NOTIFICATION
     msg.title = title
     msg.content = content
     msg.style = Style(1, 1)
@@ -140,8 +140,13 @@ __all__ = ['XingeApp',
            'Message',
            'MessageIOS',
            'TimeInterval',
+
            'ENV_DEV',
            'ENV_PROD',
+           'MESSAGE_TYPE_ANDROID_NOTIFICATION',
+           'MESSAGE_TYPE_ANDROID_MESSAGE',
+           'MESSAGE_TYPE_IOS_APNS_NOTIFICATION',
+           'MESSAGE_TYPE_IOS_REMOTE_NOTIFICATION',
 
            'PushTokenAndroid',
            'PushTokenIos',

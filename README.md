@@ -23,7 +23,7 @@ xinge = xinge_push.XingeApp(0, 'secret')
 
 #build your message
 msg = xinge_push.Message()
-msg.type = xinge_push.Message.TYPE_NOTIFICATION
+msg.type = xinge_push.MESSAGE_TYPE_ANDROID_NOTIFICATION
 msg.title = 'some title'
 msg.content = 'some content'
 
