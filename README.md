@@ -8,10 +8,16 @@
 
 ## 引用SDK
 easy_install:
-```  sudo easy_install xinge_push```
+
+```shell
+  sudo easy_install xinge_push
+```
 
 使用源码安装:
-```  sudo python setup.py install```
+
+```shell
+  sudo python setup.py install
+```
 
 ## 代码示例
 ```python
