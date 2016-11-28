@@ -84,7 +84,7 @@ class XingeApp(object):
     def SetPushParams(self, params, message, environment):
         if False == self.ValidateMessageType(message):
             return False
-        if(self.accessId >= self.IOS_MIN_ID and environment != self.ENV_PROD and environment != self.ENV_DEV):
+        if(self.accessId >= self.IOS_MIN_ID and environment != ENV_PROD and environment != ENV_DEV):
             return False
         elif(self.accessId < self.IOS_MIN_ID):
             environment = 0
