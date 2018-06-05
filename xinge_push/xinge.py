@@ -49,6 +49,8 @@ class XingeApp(object):
     PATH_DEL_TOKEN_OF_ACCOUNT = '/v2/application/del_app_account_tokens'
     PATH_DEL_ALL_TOKENS_OF_ACCOUNT = '/v2/application/del_app_account_all_tokens'
 
+    PATH_PUSH_APP =  '/v3/push/app'
+
     
     IOS_MIN_ID = 2200000000
     
