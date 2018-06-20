@@ -13,7 +13,7 @@
 
 - 如需运行测试用例，需要安装unittest
 ```sbtshell
-pip install unittest
+pip install unittest2
 ```
 ## 引用SDK
 easy_install:

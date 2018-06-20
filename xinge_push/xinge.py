@@ -5,24 +5,26 @@ Copyright ? 1998 - 2013 Tencent. All Rights Reserved. 腾讯公司 版权所有
 
 """
 
-import json
-import httplib
-import urllib
 import hashlib
+import httplib
+import json
 import time
-import base64
+import urllib
+from collections import Iterable
 
 from constant import *
 from message import Message, MessageIOS, MessageStatus
-from collections import Iterable
+
 
 class TagTokenPair(object):
     """
     tag-token串，用来批量设置tag和token的对应关系
     """
+
     def __init__(self, tag, token):
         self.tag = str(tag)
         self.token = str(token)
+
 
 class XingeApp(object):
     """
@@ -50,11 +52,10 @@ class XingeApp(object):
     PATH_DEL_TOKEN_OF_ACCOUNT = '/v2/application/del_app_account_tokens'
     PATH_DEL_ALL_TOKENS_OF_ACCOUNT = '/v2/application/del_app_account_all_tokens'
 
-    PATH_PUSH_APP =  '/v3/push/app'
+    PATH_PUSH_APP = '/v3/push/app'
 
-    
     IOS_MIN_ID = 2200000000
-    
+
     def __init__(self, accessId, secretKey):
         """
 
@@ -65,33 +66,33 @@ class XingeApp(object):
         self.secretKey = str(secretKey)
 
     def ValidateToken(self, token):
-        if(self.accessId >= 2200000000):
+        if (self.accessId >= 2200000000):
             return len(token) == 64
         else:
             return (len(token) == 40 or len(token) == 64)
-        
+
     def InitParams(self):
         params = {}
         params['access_id'] = self.accessId
         params['timestamp'] = XingeHelper.GenTimestamp()
         return params
-    
+
     def ValidateMessageType(self, message):
-        if(self.accessId >= self.IOS_MIN_ID and isinstance(message, MessageIOS)):
+        if (self.accessId >= self.IOS_MIN_ID and isinstance(message, MessageIOS)):
             return True
-        elif(self.accessId < self.IOS_MIN_ID and not isinstance(message, MessageIOS)):
+        elif (self.accessId < self.IOS_MIN_ID and not isinstance(message, MessageIOS)):
             return True
         else:
             return False
-        
+
     def SetPushParams(self, params, message, environment):
         if False == self.ValidateMessageType(message):
             return False
-        if(self.accessId >= self.IOS_MIN_ID and environment != ENV_PROD and environment != ENV_DEV):
+        if (self.accessId >= self.IOS_MIN_ID and environment != ENV_PROD and environment != ENV_DEV):
             return False
-        elif(self.accessId < self.IOS_MIN_ID):
+        elif (self.accessId < self.IOS_MIN_ID):
             environment = 0
-        
+
         params['expire_time'] = message.expireTime
         params['send_time'] = message.sendTime
         params['message_type'] = message.type
@@ -101,13 +102,13 @@ class XingeApp(object):
         if None == msgObj or not isinstance(msgObj, dict):
             return False
         else:
-            params['message'] = json.dumps(msgObj, separators=(',',':'), ensure_ascii=False)
+            params['message'] = json.dumps(msgObj, separators=(',', ':'), ensure_ascii=False)
             return True
-        
+
     def Request(self, path, params):
         params['sign'] = XingeHelper.GenSign(path, params, self.secretKey)
         return XingeHelper.Request(path, params)
-    
+
     def PushSingleDevice(self, deviceToken, message, environment=0):
         """
         推送到单个设备
@@ -119,15 +120,15 @@ class XingeApp(object):
         deviceToken = str(deviceToken)
         if not (isinstance(message, Message) or isinstance(message, MessageIOS)):
             return ERR_PARAM, 'message type error'
-        
+
         params = self.InitParams()
         if False == self.SetPushParams(params, message, environment):
             return ERR_PARAM, 'invalid message, check your input'
         params['device_token'] = deviceToken
-        
+
         ret = self.Request(self.PATH_PUSH_TOKEN, params)
         return ret[0], ret[1]
-    
+
     def PushSingleAccount(self, deviceType, account, message, environment=0):
         """
         推送到单个账号
@@ -141,16 +142,16 @@ class XingeApp(object):
         account = str(account)
         if not isinstance(message, Message):
             return ERR_PARAM, 'message type error'
-        
+
         params = self.InitParams()
         if False == self.SetPushParams(params, message, environment):
             return ERR_PARAM, 'invalid message, check your input'
         params['device_type'] = deviceType
         params['account'] = account
-        
+
         ret = self.Request(self.PATH_PUSH_ACCOUNT, params)
         return ret[0], ret[1]
-    
+
     def PushAccountList(self, deviceType, accountList, message, environment=0):
         """
         推送到多个账号，如果目标账号数超过10000，建议改用XingeApp.PushDeviceListMultiple
@@ -165,17 +166,17 @@ class XingeApp(object):
             return ERR_PARAM, 'message type error'
         if not isinstance(accountList, Iterable):
             return ERR_PARAM, 'accountList type error', None
-        
+
         params = self.InitParams()
         if False == self.SetPushParams(params, message, environment):
             return ERR_PARAM, 'invalid message, check your input'
         params['device_type'] = deviceType
         params['account_list'] = json.dumps([str(i) for i in accountList])
         params['send_time'] = ""
-        
+
         ret = self.Request(self.PATH_PUSH_ACCOUNT_LIST, params)
         return ret[0], ret[1], ret[2]
-    
+
     def PushAllDevices(self, deviceType, message, environment=0):
         """
         推送给全量设备
@@ -187,14 +188,14 @@ class XingeApp(object):
         deviceType = int(deviceType)
         if not isinstance(message, Message):
             return ERR_PARAM, 'message type error', None
-        
+
         params = self.InitParams()
         if False == self.SetPushParams(params, message, environment):
             return ERR_PARAM, 'invalid message, check your input', None
         params['device_type'] = deviceType
         params['loop_times'] = message.loopTimes
         params['loop_interval'] = message.loopInterval
-        
+
         ret = self.Request(self.PATH_PUSH_ALL, params)
         result = None
         if ERR_OK == ret[0]:
@@ -203,7 +204,7 @@ class XingeApp(object):
             else:
                 result = ret[2]['push_id']
         return ret[0], ret[1], result
-    
+
     def PushTags(self, deviceType, tagList, tagsOp, message, environment=0):
         """
         推送给多个tags对应的设备
@@ -219,18 +220,18 @@ class XingeApp(object):
             return ERR_PARAM, 'message type error', None
         if not isinstance(tagList, Iterable):
             return ERR_PARAM, 'tagList type error', None
-        if tagsOp not in ('AND','OR'):
+        if tagsOp not in ('AND', 'OR'):
             return ERR_PARAM, 'tagsOp error', None
-        
+
         params = self.InitParams()
         if not self.SetPushParams(params, message, environment):
             return ERR_PARAM, 'invalid message, check your input', None
         params['device_type'] = deviceType
-        params['tags_list'] = json.dumps([str(tag) for tag in tagList], separators=(',',':'))
+        params['tags_list'] = json.dumps([str(tag) for tag in tagList], separators=(',', ':'))
         params['tags_op'] = tagsOp
         params['loop_times'] = message.loopTimes
         params['loop_interval'] = message.loopInterval
-        
+
         ret = self.Request(self.PATH_PUSH_TAGS, params)
         result = None
         if ERR_OK == ret[0]:
@@ -249,11 +250,11 @@ class XingeApp(object):
         """
         if not isinstance(message, Message):
             return ERR_PARAM, 'message type error'
-        
+
         params = self.InitParams()
         if not self.SetPushParams(params, message, environment):
             return ERR_PARAM, 'invalid message, check your input'
-            
+
         ret = self.Request(self.PATH_CREATE_MULTIPUSH, params)
         result = None
         if ERR_OK == ret[0]:
@@ -275,8 +276,8 @@ class XingeApp(object):
             return ERR_PARAM, 'push_id type error'
         if not isinstance(deviceList, Iterable):
             return ERR_PARAM, 'deviceList type error', None
-        
-        params = self.InitParams()        
+
+        params = self.InitParams()
         params['device_list'] = json.dumps([str(i) for i in deviceList])
         params['push_id'] = pushId
         params['send_time'] = ""
@@ -295,14 +296,14 @@ class XingeApp(object):
             return ERR_PARAM, 'push_id type error'
         if not isinstance(accountList, Iterable):
             return ERR_PARAM, 'accountList type error', None
-        
-        params = self.InitParams()        
+
+        params = self.InitParams()
         params['account_list'] = json.dumps([str(i) for i in accountList])
         params['push_id'] = pushId
         params['send_time'] = ""
         ret = self.Request(self.PATH_PUSH_ACCOUNT_LIST_MULTIPLE, params)
         return ret[0], ret[1]
-    
+
     def QueryPushStatus(self, pushIdList):
         """
         查询群发消息的状态，可同时查询多个pushId状态
@@ -311,10 +312,10 @@ class XingeApp(object):
         """
         if not isinstance(pushIdList, Iterable):
             return ERR_PARAM, 'pushIdList type error', None
-        
+
         params = self.InitParams()
-        params['push_ids'] = json.dumps([{'push_id':str(pushId)} for pushId in pushIdList], separators=(',',':'))
-        
+        params['push_ids'] = json.dumps([{'push_id': str(pushId)} for pushId in pushIdList], separators=(',', ':'))
+
         ret = self.Request(self.PATH_GET_PUSH_STATUS, params)
         result = {}
         if ERR_OK == ret[0]:
@@ -322,9 +323,9 @@ class XingeApp(object):
                 return ERR_RETURN_DATA, '', result
             for status in ret[2]['list']:
                 result[status['push_id']] = MessageStatus(status['status'], status['start_time'])
-            
+
         return ret[0], ret[1], result
-    
+
     def QueryDeviceCount(self):
         """
         查询APP覆盖的设备数量
@@ -339,7 +340,7 @@ class XingeApp(object):
             else:
                 result = ret[2]['device_num']
         return ret[0], ret[1], result
-    
+
     def QueryTags(self, start, limit):
         """
         查询应用当前所有的tags
@@ -350,7 +351,7 @@ class XingeApp(object):
         params = self.InitParams()
         params['start'] = int(start)
         params['limit'] = int(limit)
-        
+
         ret = self.Request(self.PATH_QUERY_TAGS, params)
         retCode = ret[0]
         total = None
@@ -360,11 +361,11 @@ class XingeApp(object):
                 retCode = ERR_RETURN_DATA
             else:
                 total = ret[2]['total']
-                
+
             if 'tags' in ret[2]:
                 tags = ret[2]['tags']
         return retCode, ret[1], total, tags
-    
+
     def CancelTimingPush(self, pushId):
         """
         取消尚未推送的定时任务
@@ -373,10 +374,10 @@ class XingeApp(object):
         """
         params = self.InitParams()
         params['push_id'] = str(pushId)
-        
+
         ret = self.Request(self.PATH_CANCEL_TIMING_PUSH, params)
         return ret[0], ret[1]
-        
+
     def BatchSetTag(self, tagTokenPairs):
         """
         批量为token设备标签，每次调用最多输入20个pair
@@ -390,10 +391,10 @@ class XingeApp(object):
                 return ERR_PARAM, ('invalid token %s' % pair.token)
         params = self.InitParams()
         params['tag_token_list'] = json.dumps([[pair.tag, pair.token] for pair in tagTokenPairs])
-        
+
         ret = self.Request(self.PATH_BATCH_SET_TAG, params)
         return ret[0], ret[1]
-        
+
     def BatchDelTag(self, tagTokenPairs):
         """
         批量为token删除标签，每次调用最多输入20个pair
@@ -407,7 +408,7 @@ class XingeApp(object):
                 return ERR_PARAM, ('invalid token %s' % pair.token)
         params = self.InitParams()
         params['tag_token_list'] = json.dumps([[pair.tag, pair.token] for pair in tagTokenPairs])
-        
+
         ret = self.Request(self.PATH_BATCH_DEL_TAG, params)
         return ret[0], ret[1]
 
@@ -494,23 +495,24 @@ class XingeApp(object):
         ret = self.Request(self.PATH_DEL_ALL_TOKENS_OF_ACCOUNT, params)
         return ret[0], ret[1]
 
+
 class XingeHelper(object):
     XINGE_HOST = 'openapi.xg.qq.com'
     XINGE_PORT = 80
     TIMEOUT = 10
     HTTP_METHOD = 'POST'
-    HTTP_HEADERS = {'HOST' : XINGE_HOST, 'Content-Type' : 'application/x-www-form-urlencoded'}
-    
+    HTTP_HEADERS = {'HOST': XINGE_HOST, 'Content-Type': 'application/x-www-form-urlencoded'}
+
     STR_RET_CODE = 'ret_code'
     STR_ERR_MSG = 'err_msg'
     STR_RESULT = 'result'
-    
+
     @classmethod
     def SetServer(cls, host=XINGE_HOST, port=XINGE_PORT):
         cls.XINGE_HOST = host
         cls.XINGE_PORT = port
         cls.HTTP_HEADERS['HOST'] = cls.XINGE_HOST
-    
+
     @classmethod
     def GenSign(cls, path, params, secretKey):
         ks = sorted(params.keys())
@@ -519,14 +521,9 @@ class XingeHelper(object):
         return hashlib.md5(signSource).hexdigest()
 
     @classmethod
-    def GenBase64EncodedStr(cls, appId, secretKey):
-        signSource = '%s:%s' % (appId, secretKey)
-        return base64.b64encode(signSource)
-    
-    @classmethod
     def GenTimestamp(cls):
         return int(time.time())
-    
+
     @classmethod
     def Request(cls, path, params):
         httpClient = httplib.HTTPConnection(cls.XINGE_HOST, cls.XINGE_PORT, timeout=cls.TIMEOUT)
@@ -537,7 +534,7 @@ class XingeHelper(object):
         else:
             # invalid method
             return ERR_PARAM, '', None
-        
+
         response = httpClient.getresponse()
         retCode = ERR_RETURN_DATA
         errMsg = ''
@@ -547,11 +544,11 @@ class XingeHelper(object):
         else:
             data = response.read()
             retDict = json.loads(data)
-            if(cls.STR_RET_CODE in retDict):
+            if (cls.STR_RET_CODE in retDict):
                 retCode = retDict[cls.STR_RET_CODE]
-            if(cls.STR_ERR_MSG in retDict):
+            if (cls.STR_ERR_MSG in retDict):
                 errMsg = retDict[cls.STR_ERR_MSG]
-            if(cls.STR_RESULT in retDict):
+            if (cls.STR_RESULT in retDict):
                 if isinstance(retDict[cls.STR_RESULT], dict):
                     result = retDict[cls.STR_RESULT]
                 elif isinstance(retDict[cls.STR_RESULT], list):
