@@ -5,7 +5,16 @@
 
 ## 兼容版本
 - Python 2.7
+- 需要使用到base64
+```sbtshell
+➜  ~ sudo easy_install pip
+➜  ~ sudo pip install pybase64
+```
 
+- 如需运行测试用例，需要安装unittest
+```sbtshell
+pip install unittest
+```
 ## 引用SDK
 easy_install:
 

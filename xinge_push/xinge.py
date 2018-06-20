@@ -10,6 +10,7 @@ import httplib
 import urllib
 import hashlib
 import time
+import base64
 
 from constant import *
 from message import Message, MessageIOS, MessageStatus
@@ -516,6 +517,11 @@ class XingeHelper(object):
         paramStr = ''.join([('%s=%s' % (k, params[k])) for k in ks])
         signSource = '%s%s%s%s%s' % (cls.HTTP_METHOD, cls.XINGE_HOST, path, paramStr, secretKey)
         return hashlib.md5(signSource).hexdigest()
+
+    @classmethod
+    def GenBase64EncodedStr(cls, appId, secretKey):
+        signSource = '%s:%s' % (appId, secretKey)
+        return base64.b64encode(signSource)
     
     @classmethod
     def GenTimestamp(cls):

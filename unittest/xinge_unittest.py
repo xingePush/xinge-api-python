@@ -23,6 +23,12 @@ class HelperTest(unittest.TestCase):
         secretKey = 'some_secret_key'
         sign = XingeHelper.GenSign(path, params, secretKey)
         self.assertEqual(sign, '5499cc1f827a581d241a013bc1030037')
+
+    def testGenBase64EncodedStr(self):
+        appId = "a5b5f071ff77a"
+        secretKey = "ea512eb7704d5fb5a6a937cafa70e771"
+        basestr = XingeHelper.GenBase64EncodedStr(appId, secretKey)
+        self.assertEqual(basestr, 'YTViNWYwNzFmZjc3YTplYTUxMmViNzcwNGQ1ZmI1YTZhOTM3Y2FmYTcwZTc3MQ==')
         
 class TimeIntervalTest(unittest.TestCase):
     def testGetObjectNormal(self):
