@@ -66,7 +66,10 @@ class Xinge3Helper(object):
     @classmethod
     def PushApp(cls, app_id, secret_key , context, params):
 
-        response = requests.post(cls.URL, auth=HTTPBasicAuth(app_id, secret_key), json=context, headers=cls.HTTP_HEADERS)
+        push_app_url=cls.URL + 'push/app'
+        auth=HTTPBasicAuth(app_id, secret_key)
+
+        response = requests.post(push_app_url, auth=auth, json=context, headers=cls.HTTP_HEADERS)
 
         retCode = ERR_RETURN_DATA
         errMsg = ''
