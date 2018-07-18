@@ -40,11 +40,11 @@ class XingeApp3(object):
         self.appId = int(appId)
         self.secretKey = str(secretKey)
 
-    def PushApp(self, path, params):
+    def PushApp(self, context, params):
         """
         TODO
         """
-        return Xinge3Helper.PushApp(self.appId,self.secretKey, params)
+        return Xinge3Helper.PushApp(self.appId, self.secretKey, context, params)
 
 
 class Xinge3Helper(object):
@@ -59,49 +59,16 @@ class Xinge3Helper(object):
     STR_RESULT = 'result'
 
     @classmethod
-    def SetServer(cls, host=XINGE_HOST, port=XINGE_PORT):
-        cls.XINGE_HOST = host
-        cls.XINGE_PORT = port
-        cls.HTTPS_HEADERS['HOST'] = cls.XINGE_HOST
-
-    @classmethod
     def GenBase64EncodedStr(cls, appId, secretKey):
         signSource = '%s:%s' % (appId, secretKey)
         return base64.b64encode(signSource)
 
     @classmethod
-    def PushApp(cls, path, params):
+    def PushApp(cls, app_id, secret_key , context, params):
 
-        r = requests.post(cls.URL, auth=HTTPBasicAuth('user', 'pass'),  headers=cls.HTTP_HEADERS)
+        response = requests.post(cls.URL, auth=HTTPBasicAuth(app_id, secret_key), json=context, headers=cls.HTTP_HEADERS)
 
-        httpClient = httplib.HTTPSConnection(cls.XINGE_HOST, cls.XINGE_PORT, timeout=cls.TIMEOUT)
-
-        if cls.HTTP_METHOD == 'POST':
-            httpClient.request(cls.HTTP_METHOD, path, urllib.urlencode(params), headers=cls.HTTP_HEADERS)
-        else:
-            # invalid method
-            return ERR_PARAM, '', None
-
-        response = httpClient.getresponse()
         retCode = ERR_RETURN_DATA
         errMsg = ''
         result = {}
-        if 200 != response.status:
-            retCode = ERR_HTTP
-        else:
-            data = response.read()
-            retDict = json.loads(data)
-            if (cls.STR_RET_CODE in retDict):
-                retCode = retDict[cls.STR_RET_CODE]
-            if (cls.STR_ERR_MSG in retDict):
-                errMsg = retDict[cls.STR_ERR_MSG]
-            if (cls.STR_RESULT in retDict):
-                if isinstance(retDict[cls.STR_RESULT], dict):
-                    result = retDict[cls.STR_RESULT]
-                elif isinstance(retDict[cls.STR_RESULT], list):
-                    result = retDict[cls.STR_RESULT]
-                elif retDict[cls.STR_RESULT] == '':
-                    pass
-                else:
-                    retCode = ERR_RETURN_DATA
         return retCode, errMsg, result

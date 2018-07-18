@@ -9,7 +9,7 @@ Created on 2013-12-24
 import sys
 
 import path_util
-import unittesta
+import unittest
 
 path_util.append_sys_path(sys, '..')
 

@@ -16,7 +16,7 @@ with open('xinge_push/__init__.py') as f:
 
 NAME = "xinge_push"
 
-PACKAGES = ["xinge_push", "xinge_push_v3"]
+PACKAGES = ["xinge_push",]
 DESCRIPTION = "xinge Push API for Python(http://xg.qq.com)."
 LONG_DESCRIPTION = open("README.rst").read()
 

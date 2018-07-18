@@ -8,5 +8,3 @@ six==1.11.0
 traceback2==1.4.0
 unittest2==1.1.0
 urllib3==1.23
-xinge-push==1.1.9
-xinge-push-v3==1.1.9

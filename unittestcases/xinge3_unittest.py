@@ -14,8 +14,10 @@ class HelperTest(unittest.TestCase):
         self.assertEqual(basestr, 'YTViNWYwNzFmZjc3YTplYTUxMmViNzcwNGQ1ZmI1YTZhOTM3Y2FmYTcwZTc3MQ==')
 
     def test_request(self):
-        r = requests.post('https://openapi.xg.qq.com/push/app', auth=HTTPBasicAuth('a5b5f071ff77a', 'ea512eb7704d5fb5a6a937cafa70e771'))
-        print r.status_code
+        auth = HTTPBasicAuth('a5b5f071ff77a', 'ea512eb7704d5fb5a6a937cafa70e771')
+        headers = {'Content-Type': 'application/json'}
+        r = requests.post('https://openapi.xg.qq.com/push/app', auth=auth, headers=headers)
+        print r.headers
 
 
 if __name__ == '__main__':
