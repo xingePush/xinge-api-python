@@ -10,7 +10,7 @@ virtualenv:
 
 install:
   - pip install -r requirements.txt
-  - pip install .
+  - python setup.py install
 
 script:
  - python  unittestcases/xinge_unittest.py
