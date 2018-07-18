@@ -8,6 +8,20 @@ from .style import Style, ClickAction
 from .message import Message, MessageIOS
 from .schedule import TimeInterval
 from .constant import *
+from xinge_push.xinge3 import XingeApp3
+
+
+def PushApp(accessId, secretKey, content):
+    """
+    推送到单个设备, 限Android系统使用
+    :param accessId: int, APP的唯一标识
+    :param secretKey: str, 信鸽网站分配的通信密钥
+    :param content: str, 消息内容
+    :return: (int, str), (ret_code, error_msg)
+    """
+    xg = XingeApp3(accessId, secretKey)
+    return xg.PushApp(content)
+
 
 def _BuildAndroidNotification(title, content):
     msg = Message()

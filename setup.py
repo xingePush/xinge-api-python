@@ -16,14 +16,14 @@ with open('xinge_push/__init__.py') as f:
 
 NAME = "xinge_push"
 
-PACKAGES = ["xinge_push", ]
+PACKAGES = ["xinge_push", "xinge_push_v3"]
 DESCRIPTION = "xinge Push API for Python(http://xg.qq.com)."
 LONG_DESCRIPTION = open("README.rst").read()
 
 KEYWORDS = ["xinge", "Android Push", "iOS Push", "push"]
 
-AUTHOR = "yang"
-AUTHOR_EMAIL = "1020211152@qq.com"
+AUTHOR = "caofangkun"
+AUTHOR_EMAIL = "caofangkun@gmail.com"
 LICENSE = "MIT"
 
 URL = "https://github.com/xingePush/xinge-api-python"
@@ -47,5 +47,5 @@ setup(
     license=LICENSE,
     packages=PACKAGES,
     include_package_data=True,
-    zip_safe=True,
+    zip_safe=True, install_requires=['requests']
 )

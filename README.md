@@ -1,3 +1,5 @@
+Master Branch: [![Travis CI](https://travis-ci.org/xingePush/xinge-api-python.svg?branch=master)](https://travis-ci.org/xingePush/xinge-api-python)
+
 # xinge-api-python
 ## 概述
 欢迎使用信鸽ServerSDK - Python版本封装的开发包，具有最新版本的信鸽API功能。
@@ -5,10 +7,11 @@
 
 ## 兼容版本
 - Python 2.7
-- 需要使用到base64
+- 需要使用到base64 和 requests
 ```sbtshell
 ➜  ~ sudo easy_install pip
 ➜  ~ sudo pip install pybase64
+➜  ~ sudo pip install requests 
 ```
 
 - 如需运行测试用例，需要安装unittest

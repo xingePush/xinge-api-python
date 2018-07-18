@@ -6,10 +6,7 @@ Copyright © 1998 - 2013 Tencent. All Rights Reserved. 腾讯公司 版权所有
 
 '''
 
-import xinge_push
 
-# Android按token推送
-print xinge_push.PushTokenAndroid(000, 'secret_key', 'title', 'content', 'token')
 # Android按账号推送
 print xinge_push.PushAccountAndroid(000, 'secret_key', 'title', 'content', 'account')
 # Android全量推送
