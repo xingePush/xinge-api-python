@@ -1,7 +1,7 @@
-import unittest
+import unittesta
 
 
-class HelperTest(unittest.TestCase):
+class HelperTest(unittesta.TestCase):
 
     def test_gen_base64_encoded_str(self):
         appId = "a5b5f071ff77a"
@@ -11,4 +11,4 @@ class HelperTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittesta.main()

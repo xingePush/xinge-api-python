@@ -9,7 +9,7 @@ Created on 2013-12-24
 import sys
 
 import path_util
-import unittest
+import unittesta
 
 path_util.append_sys_path(sys, '..')
 
@@ -17,7 +17,7 @@ from xinge_push import *
 from xinge_push.xinge import XingeHelper
 
 
-class HelperTest(unittest.TestCase):
+class HelperTest(unittesta.TestCase):
     def testGenSignNormal(self):
         path = '/path/to/test'
         params = {'ParamA': '11111', 'paramB': '22', 'AnotherParam': '333'}
@@ -25,8 +25,8 @@ class HelperTest(unittest.TestCase):
         sign = XingeHelper.GenSign(path, params, secretKey)
         self.assertEqual(sign, '5499cc1f827a581d241a013bc1030037')
 
-ß
-class TimeIntervalTest(unittest.TestCase):
+
+class TimeIntervalTest(unittesta.TestCase):
     def testGetObjectNormal(self):
         o = TimeInterval(0, 0, 23, 59).GetObject()
         expect = {'start': {'hour': '0', 'min': '0'}, 'end': {'hour': '23', 'min': '59'}}
@@ -54,7 +54,7 @@ class TimeIntervalTest(unittest.TestCase):
         self.assertEqual(TimeInterval(5, 6, 5, 5).GetObject(), None)
 
 
-class ClickActionTest(unittest.TestCase):
+class ClickActionTest(unittesta.TestCase):
     def getDefaultAction(self):
         a = ClickAction()
         a.url = 'http://www.test.com:8080/some/path'
@@ -100,7 +100,7 @@ class ClickActionTest(unittest.TestCase):
         self.assertEqual(o, expect)
 
 
-class MessageTest(unittest.TestCase):
+class MessageTest(unittesta.TestCase):
     def getDefaultMsg(self):
         msg = Message()
         msg.title = 'some title'
@@ -150,4 +150,4 @@ class MessageTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittesta.main()

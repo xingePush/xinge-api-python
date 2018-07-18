@@ -6,14 +6,14 @@ Copyright ? 1998 - 2018 Tencent. All Rights Reserved. 腾讯公司 版权所有
 """
 
 import base64
-import hashlib
 import httplib
 import json
-import time
 import urllib
 
-from constant import *
-from message import MessageIOS
+import requests
+from requests.auth import HTTPBasicAuth
+
+from xinge_push.constant import *
 
 
 class TagTokenPair(object):
@@ -40,43 +40,23 @@ class XingeApp3(object):
         self.appId = int(appId)
         self.secretKey = str(secretKey)
 
-    def ValidateToken(self, token):
-        if (self.appId >= 2200000000):
-            return len(token) == 64
-        else:
-            return (len(token) == 40 or len(token) == 64)
-
-    def InitParams(self):
-        params = {}
-        params['app_id'] = self.appId
-        params['timestamp'] = XingeHelper.GenTimestamp()
-        return params
-
-    def ValidateMessageType(self, message):
-        if (self.appId >= self.IOS_MIN_ID and isinstance(message, MessageIOS)):
-            return True
-        elif (self.appId < self.IOS_MIN_ID and not isinstance(message, MessageIOS)):
-            return True
-        else:
-            return False
-
-    def Request(self, path, params):
-        params['Authorization'] = Xinge3Helper.GenBase64EncodedStr(self.appId, self.secretKey)
-        return Xinge3Helper.Request(path, params)
+    def PushApp(self, path, params):
+        """
+        TODO
+        """
+        return Xinge3Helper.PushApp(self.appId,self.secretKey, params)
 
 
 class Xinge3Helper(object):
-    XINGE_HOST = 'openapi.xg.qq.com'
+    URL = 'https://openapi.xg.qq.com/'
     XINGE_PORT = 80
     TIMEOUT = 10
     HTTPS_METHOD = 'POST'
-    HTTPS_HEADERS = {'HOST': XINGE_HOST, 'Content-Type': 'application/x-www-form-urlencoded'}
-
+    HTTPS_HEADERS = {'HOST': URL, 'Content-Type': 'application/json'}
 
     STR_RET_CODE = 'ret_code'
     STR_ERR_MSG = 'err_msg'
     STR_RESULT = 'result'
-
 
     @classmethod
     def SetServer(cls, host=XINGE_HOST, port=XINGE_PORT):
@@ -84,30 +64,18 @@ class Xinge3Helper(object):
         cls.XINGE_PORT = port
         cls.HTTPS_HEADERS['HOST'] = cls.XINGE_HOST
 
-
-    @classmethod
-    def GenSign(cls, path, params, secretKey):
-        ks = sorted(params.keys())
-        paramStr = ''.join([('%s=%s' % (k, params[k])) for k in ks])
-        signSource = '%s%s%s%s%s' % (cls.HTTP_METHOD, cls.XINGE_HOST, path, paramStr, secretKey)
-        return hashlib.md5(signSource).hexdigest()
-
-
     @classmethod
     def GenBase64EncodedStr(cls, appId, secretKey):
         signSource = '%s:%s' % (appId, secretKey)
-        return base64.b64encode(bytes(signSource, 'utf-8'))
-
-
-    @classmethod
-    def GenTimestamp(cls):
-        return int(time.time())
-
+        return base64.b64encode(signSource)
 
     @classmethod
-    def Request(cls, path, params):
+    def PushApp(cls, path, params):
+
+        r = requests.post(cls.URL, auth=HTTPBasicAuth('user', 'pass'),  headers=cls.HTTP_HEADERS)
 
         httpClient = httplib.HTTPSConnection(cls.XINGE_HOST, cls.XINGE_PORT, timeout=cls.TIMEOUT)
+
         if cls.HTTP_METHOD == 'POST':
             httpClient.request(cls.HTTP_METHOD, path, urllib.urlencode(params), headers=cls.HTTP_HEADERS)
         else:
