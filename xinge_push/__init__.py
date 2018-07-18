@@ -170,4 +170,7 @@ __all__ = ['XingeApp',
            'PushAllIos',
            'PushTagsAndroid',
            'PushTagsIos',
+
+           'XingeApp3',
+           'PushApp',
            ]
