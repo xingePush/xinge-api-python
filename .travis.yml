@@ -1,14 +1,17 @@
 language: python
+sudo: required
 
 python:
-  - "2.6"
   - "2.7"
   - "3.4"
-  - "3.5"
-  - "3.6"
+
+virtualenv:
+      system_site_package: true
 
 install:
   - pip install -r requirements.txt
   - pip install .
 
-script: pytest
+script:
+ - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then python -m unittest unittestcases; fi
+ - if [[ $TRAVIS_PYTHON_VERSION == '3.4' ]]; then python -m unittest unittestcases; fi
