@@ -13,5 +13,5 @@ install:
   - pip install .
 
 script:
- - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then python -m unittest unittestcases; fi
- - if [[ $TRAVIS_PYTHON_VERSION == '3.4' ]]; then python -m unittest unittestcases; fi
+ - python  unittestcases/xinge_unittest.py
+ - python  unittestcases/xinge3_unittest.py
